@@ -1,0 +1,31 @@
+---
+- name: Apply Base OS Hardening, Packages, and Sysctl Tuning
+  hosts: webservers
+  become: true
+  roles:
+    - common
+    - php_fpm
+    - nginx
+
+  post_tasks:
+    - name: Verify Nginx is active and listening
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Verify PHP 8.2-FPM is active and listening
+      ansible.builtin.systemd:
+        name: "php{{ php_version }}-fpm"
+        state: started
+        enabled: true
+
+    - name: Smoke check localhost HTTP response
+      ansible.builtin.uri:
+        url: http://127.0.0.1/api/health
+        status_code: 200
+        return_content: yes
+      register: health_check
+      retries: 3
+      delay: 5
+      until: health_check.status == 200

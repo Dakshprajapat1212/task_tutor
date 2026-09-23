@@ -1,0 +1,6 @@
+---
+# roles/php_fpm/handlers/main.yml
+- name: Restart PHP-FPM
+  ansible.builtin.systemd:
+    name: "php{{ php_version }}-fpm"
+    state: restarted

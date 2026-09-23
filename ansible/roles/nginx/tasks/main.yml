@@ -1,0 +1,37 @@
+---
+# roles/nginx/tasks/main.yml
+- name: Install Nginx Web Server
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Remove default Nginx site configuration
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx
+
+- name: Deploy tuned main nginx.conf
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload Nginx
+
+- name: Deploy TaskTutor VirtualHost configuration
+  ansible.builtin.template:
+    src: task_tutor.conf.j2
+    dest: /etc/nginx/sites-available/task_tutor.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload Nginx
+
+- name: Enable TaskTutor site by symlink
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/task_tutor.conf
+    dest: /etc/nginx/sites-enabled/task_tutor.conf
+    state: link
+  notify: Reload Nginx
