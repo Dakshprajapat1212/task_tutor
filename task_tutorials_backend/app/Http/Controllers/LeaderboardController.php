@@ -244,8 +244,12 @@ class LeaderboardController extends Controller
                 'tag' => $userQuizAvg . '% Accuracy',
                 'color' => '#ef4444',
                 'tips' => 'Review notes before attempting quizzes.'
-            ]
-        ];
+            ],
+            [
+                'id' => 'night-owl',
+                'title' => 'Night Owl',
+                'requirement' => '10 Hours Midnight Study',
+                'desc' => 'Study between 10 PM and 4 AM.',
                 'progress' => 30,
                 'unlocked' => false,
                 'icon' => '🦉',

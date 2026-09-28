@@ -1,53 +1,30 @@
-# ==========================================================
-# Production Laravel PHP 8.2-FPM Container
-# ==========================================================
 FROM php:8.2-fpm-alpine
 
-# Set working directory
-WORKDIR /var/www/html
-
-# Install system dependencies & build tools needed for PHP extensions
-RUN apk update && apk add --no-cache \
-    curl \
-    git \
+RUN apk add --no-cache \
+    freetype-dev \
+    libjpeg-turbo-dev \
     libpng-dev \
-    libxml2-dev \
+    libzip-dev \
     zip \
     unzip \
+    git \
     oniguruma-dev \
-    libzip-dev
+    && docker-php-ext-install pdo pdo_mysql mbstring zip bcmath gd
 
-# Install PHP extensions required for Laravel and MySQL
-RUN docker-php-ext-install \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    opcache \
-    zip
-
-# Install Composer globally from official trusted image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy composer files first to leverage Docker layer caching
-COPY composer.json composer.lock ./
+WORKDIR /var/www
 
-# Install production dependencies only (no dev packages, optimized autoloader)
-RUN composer install --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist --optimize-autoloader
-
-# Copy application source code
 COPY . .
 
-# Set proper permissions for Laravel writable directories
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Include dev dependencies so local testing/seeding works out-of-the-box
+RUN composer install --optimize-autoloader --no-interaction
 
-# Switch to unprivileged user for security
-USER www-data
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Expose FastCGI port
+ENTRYPOINT ["docker-entrypoint.sh"]
+
 EXPOSE 9000
 
-# Start PHP-FPM in foreground
 CMD ["php-fpm"]

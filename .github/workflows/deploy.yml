@@ -1,0 +1,114 @@
+name: TaskTutor Audited CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 347181052564.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  # ==========================================
+  # STAGE 1: Frontend Quality & Build Test
+  # ==========================================
+  test-frontend:
+    name: 🧪 Test & Compile Frontend (React)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Verify React Production Build
+        run: |
+          cd frontend
+          npm run build
+
+  # ==========================================
+  # STAGE 2: Backend PHPUnit Tests (SQLite In-Memory)
+  # ==========================================
+  test-backend:
+    name: 🧪 Test Backend (Laravel PHPUnit)
+    runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      APP_ENV: testing
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_sqlite, gd
+
+      - name: Install Composer Dependencies
+        run: |
+          cd task_tutorials_backend
+          composer install --no-interaction --prefer-dist
+
+      - name: Generate App Key & Run PHPUnit Tests
+        run: |
+          cd task_tutorials_backend
+          cp .env.example .env
+          php artisan key:generate
+          ./vendor/bin/phpunit
+
+  # ==========================================
+  # STAGE 3: Build & Push to ECR (Gated by Stage 1 & 2)
+  # ==========================================
+  build-and-push:
+    name: 🚀 Build & Push Images to ECR
+    needs: [test-frontend, test-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push Frontend Image (tagged with Git SHA)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/task-tutor-frontend:${{ github.sha }}
+
+      - name: Build & Push Backend Image (tagged with Git SHA)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./task_tutorials_backend
+          file: ./task_tutorials_backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/task-tutor-backend:${{ github.sha }}
