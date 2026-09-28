@@ -13,11 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('classes', function (Blueprint $table) {
-            $table->dropForeign(['subject_id']);
-            $table->dropForeign(['faculty_id']);
-            $table->dropColumn(['subject_id', 'faculty_id']);
-        });
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            Schema::table('classes', function (Blueprint $table) {
+                $table->dropForeign(['subject_id']);
+                $table->dropForeign(['faculty_id']);
+                $table->dropColumn(['subject_id', 'faculty_id']);
+            });
+        }
     }
 
     /**

@@ -14,10 +14,12 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('faculty_id')
+                  ->nullable()
                   ->constrained('faculties')
                   ->onDelete('cascade');
 
             $table->foreignId('subject_id')
+                  ->nullable()
                   ->constrained('subjects')
                   ->onDelete('cascade');
 

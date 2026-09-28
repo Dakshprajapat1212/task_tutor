@@ -13,13 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        // Assign chapter_id based on topic_note_id if chapter_id is NULL
-        \Illuminate\Support\Facades\DB::statement('
-            UPDATE quizzes q
-            JOIN topic_notes n ON q.topic_note_id = n.id
-            SET q.chapter_id = n.chapter_id
-            WHERE q.chapter_id IS NULL AND q.topic_note_id IS NOT NULL
-        ');
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement('
+                UPDATE quizzes q
+                JOIN topic_notes n ON q.topic_note_id = n.id
+                SET q.chapter_id = n.chapter_id
+                WHERE q.chapter_id IS NULL AND q.topic_note_id IS NOT NULL
+            ');
+        }
     }
 
     /**

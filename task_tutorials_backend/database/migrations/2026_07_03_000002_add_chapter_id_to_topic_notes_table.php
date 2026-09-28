@@ -17,13 +17,15 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        DB::table('topic_notes')
-            ->join('chapters', function ($join) {
-                $join->on('topic_notes.class_id', '=', 'chapters.class_id')
-                    ->on('topic_notes.subject_id', '=', 'chapters.subject_id')
-                    ->on('topic_notes.chapter', '=', 'chapters.title');
-            })
-            ->update(['topic_notes.chapter_id' => DB::raw('chapters.id')]);
+        if (Schema::hasTable('chapters') && DB::table('chapters')->exists()) {
+            DB::table('topic_notes')
+                ->join('chapters', function ($join) {
+                    $join->on('topic_notes.class_id', '=', 'chapters.class_id')
+                        ->on('topic_notes.subject_id', '=', 'chapters.subject_id')
+                        ->on('topic_notes.chapter', '=', 'chapters.title');
+                })
+                ->update(['topic_notes.chapter_id' => DB::raw('chapters.id')]);
+        }
     }
 
     public function down(): void

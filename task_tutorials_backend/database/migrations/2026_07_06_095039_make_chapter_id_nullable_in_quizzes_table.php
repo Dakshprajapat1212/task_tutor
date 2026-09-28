@@ -13,7 +13,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        \Illuminate\Support\Facades\DB::statement('ALTER TABLE quizzes MODIFY chapter_id BIGINT UNSIGNED NULL');
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement('ALTER TABLE quizzes MODIFY chapter_id BIGINT UNSIGNED NULL');
+        }
     }
 
     /**
@@ -21,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \Illuminate\Support\Facades\DB::statement('ALTER TABLE quizzes MODIFY chapter_id BIGINT UNSIGNED NOT NULL');
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement('ALTER TABLE quizzes MODIFY chapter_id BIGINT UNSIGNED NOT NULL');
+        }
     }
 };

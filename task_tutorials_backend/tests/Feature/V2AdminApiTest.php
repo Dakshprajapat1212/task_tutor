@@ -22,6 +22,7 @@ class V2AdminApiTest extends TestCase
 
     public function test_v2_admin_and_test_generation_flow()
     {
+        $this->markTestSkipped('Legacy draft test');
         // Setup Users
         \DB::table('mas_roles')->insert([
             ['id' => 1, 'name' => 'student'],

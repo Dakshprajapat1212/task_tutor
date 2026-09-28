@@ -14,8 +14,11 @@ return new class extends Migration {
     public function up()
     {
         Schema::table('recordings', function (Blueprint $table) {
-            // Standard MariaDB syntax: CHANGE old_column new_column DATA_TYPE
-            DB::statement('ALTER TABLE recordings CHANGE chapters video_timestamps TEXT NULL');
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('ALTER TABLE recordings CHANGE chapters video_timestamps TEXT NULL');
+            } else if (Schema::hasColumn('recordings', 'chapters')) {
+                $table->renameColumn('chapters', 'video_timestamps');
+            }
         });
     }
 
@@ -27,8 +30,11 @@ return new class extends Migration {
     public function down()
     {
         Schema::table('recordings', function (Blueprint $table) {
-            // Reverts it back safely if you roll back
-            DB::statement('ALTER TABLE recordings CHANGE video_timestamps chapters TEXT NULL');
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('ALTER TABLE recordings CHANGE video_timestamps chapters TEXT NULL');
+            } else if (Schema::hasColumn('recordings', 'video_timestamps')) {
+                $table->renameColumn('video_timestamps', 'chapters');
+            }
         });
     }
 };

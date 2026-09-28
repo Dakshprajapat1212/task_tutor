@@ -19,8 +19,10 @@ return new class extends Migration
         });
 
         // Add FullText indices using raw SQL since Schema builder doesn't perfectly handle FULLTEXT across all engines
-        DB::statement('ALTER TABLE doubts ADD FULLTEXT INDEX doubt_question_fulltext (question)');
-        DB::statement('ALTER TABLE quiz_questions ADD FULLTEXT INDEX quiz_question_fulltext (question)');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE doubts ADD FULLTEXT INDEX doubt_question_fulltext (question)');
+            DB::statement('ALTER TABLE quiz_questions ADD FULLTEXT INDEX quiz_question_fulltext (question)');
+        }
     }
 
     /**
@@ -30,8 +32,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE doubts DROP INDEX doubt_question_fulltext');
-        DB::statement('ALTER TABLE quiz_questions DROP INDEX quiz_question_fulltext');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE doubts DROP INDEX doubt_question_fulltext');
+            DB::statement('ALTER TABLE quiz_questions DROP INDEX quiz_question_fulltext');
+        }
 
         Schema::table('doubts', function (Blueprint $table) {
             $table->dropColumn('explanation');

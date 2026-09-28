@@ -13,11 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY password VARCHAR(255) NULL");
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY phone_no CHAR(10) NULL");
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY password VARCHAR(255) NULL");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY phone_no CHAR(10) NULL");
+        }
 
         Schema::table('users', function (Blueprint $table) {
-            $table->string('google_id')->nullable()->after('email');
+            if (!Schema::hasColumn('users', 'google_id')) {
+                $table->string('google_id')->nullable()->after('email');
+            }
         });
     }
 
@@ -29,10 +33,14 @@ return new class extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('google_id');
+            if (Schema::hasColumn('users', 'google_id')) {
+                $table->dropColumn('google_id');
+            }
         });
 
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL");
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY phone_no CHAR(10) NOT NULL");
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY phone_no CHAR(10) NOT NULL");
+        }
     }
 };

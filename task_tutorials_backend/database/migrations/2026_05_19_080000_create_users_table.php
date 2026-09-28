@@ -21,9 +21,9 @@ return new class extends Migration
 
             $table->string('email', 50)->unique();
 
-        $table->string('password', 255);
+            $table->string('password', 255)->nullable();
 
-            $table->char('phone_no', 10);
+            $table->char('phone_no', 10)->nullable();
 
             $table->timestamps();
         });
