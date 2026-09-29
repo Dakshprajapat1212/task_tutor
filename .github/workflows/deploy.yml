@@ -1,4 +1,4 @@
-name: TaskTutor Audited CI Pipeline
+name: TaskTutor Production CI Pipeline
 
 on:
   push:
@@ -9,11 +9,8 @@ env:
   ECR_REGISTRY: 347181052564.dkr.ecr.us-east-1.amazonaws.com
 
 jobs:
-  # ==========================================
-  # STAGE 1: Frontend Quality & Build Test
-  # ==========================================
   test-frontend:
-    name: 🧪 Test & Compile Frontend (React)
+    name: 🧪 Verify Frontend Build (React)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -36,16 +33,9 @@ jobs:
           cd frontend
           npm run build
 
-  # ==========================================
-  # STAGE 2: Backend PHPUnit Tests (SQLite In-Memory)
-  # ==========================================
   test-backend:
     name: 🧪 Test Backend (Laravel PHPUnit)
     runs-on: ubuntu-latest
-    env:
-      DB_CONNECTION: sqlite
-      DB_DATABASE: ":memory:"
-      APP_ENV: testing
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -61,18 +51,15 @@ jobs:
           cd task_tutorials_backend
           composer install --no-interaction --prefer-dist
 
-      - name: Generate App Key & Run PHPUnit Tests
+      - name: Run PHPUnit Tests
+        env:
+          APP_KEY: base64:u/sBq1J0v3zG9Xm2Y4L6k8P0Q2w4E6R8T0Y2U4I6O8P=
         run: |
           cd task_tutorials_backend
-          cp .env.example .env
-          php artisan key:generate
           ./vendor/bin/phpunit
 
-  # ==========================================
-  # STAGE 3: Build & Push to ECR (Gated by Stage 1 & 2)
-  # ==========================================
   build-and-push:
-    name: 🚀 Build & Push Images to ECR
+    name: 🚀 Build & Push Images to ECR (Dual-Tagged)
     needs: [test-frontend, test-backend]
     runs-on: ubuntu-latest
     steps:
@@ -93,7 +80,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build & Push Frontend Image (tagged with Git SHA)
+      - name: Build & Push Frontend Image (SHA + latest)
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
@@ -102,8 +89,9 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_REGISTRY }}/task-tutor-frontend:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/task-tutor-frontend:latest
 
-      - name: Build & Push Backend Image (tagged with Git SHA)
+      - name: Build & Push Backend Image (SHA + latest)
         uses: docker/build-push-action@v5
         with:
           context: ./task_tutorials_backend
@@ -112,3 +100,4 @@ jobs:
           push: true
           tags: |
             ${{ env.ECR_REGISTRY }}/task-tutor-backend:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/task-tutor-backend:latest
