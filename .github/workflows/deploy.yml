@@ -1,4 +1,4 @@
-name: TaskTutor Production CI Pipeline
+name: TaskTutor Production CI/CD Pipeline
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: 347181052564.dkr.ecr.us-east-1.amazonaws.com
+  ASG_NAME: task-tutor-asg-20260929225007273500000001
 
 jobs:
   test-frontend:
@@ -58,8 +59,8 @@ jobs:
           cd task_tutorials_backend
           ./vendor/bin/phpunit
 
-  build-and-push:
-    name: 🚀 Build & Push Images to ECR (Dual-Tagged)
+  build-and-deploy:
+    name: 🚀 Build, Push & Deploy to AWS ASG
     needs: [test-frontend, test-backend]
     runs-on: ubuntu-latest
     steps:
@@ -101,3 +102,10 @@ jobs:
           tags: |
             ${{ env.ECR_REGISTRY }}/task-tutor-backend:${{ github.sha }}
             ${{ env.ECR_REGISTRY }}/task-tutor-backend:latest
+
+      - name: Trigger Zero-Downtime ASG Rolling Deployment
+        run: |
+          echo "Triggering Rolling Instance Refresh on AWS Auto Scaling Group..."
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name ${{ env.ASG_NAME }} \
+            --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 180}'
