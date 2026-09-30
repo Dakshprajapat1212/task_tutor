@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "instance_type" {
-  description = "AWS EC2 Instance Type (Free Tier)"
+  description = "AWS EC2 Instance Type (Free Tier Eligible)"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
 }
